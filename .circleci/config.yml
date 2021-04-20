@@ -4,11 +4,30 @@
 #
 version: 2.1
 
+orbs:
+  aws-ecr: circleci/aws-ecr@6.15.3
+  aws-ecs: circleci/aws-ecs@2.1.0
+  aws-cli: circleci/aws-cli@2.0.0
+
 jobs:
   run-specs:
     docker:
       # specify the version you desire here
       - image: cimg/ruby:3.0.1-node
+        environment:
+          BUNDLER_VERSION: 2.0.1
+          PG_HOST: localhost
+          RAILS_ENV: test
+          RACK_ENV: test
+
+      - image: postgres:12.3-alpine
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: project_test
+          POSTGRES_PASSWORD: ""
+          POSTGRES_HOST_AUTH_METHOD: trust
+          
+      - image: circleci/redis:6.0.9-alpine
 
     steps:
       - checkout
@@ -23,6 +42,17 @@ jobs:
             libpng-dev \
             libxrender-dev \
             libfontconfig
+
+      - restore_cache:
+          keys:
+            - cachenum-16-bundler-{{ checksum "Gemfile.lock" }}
+      - restore_cache:
+          keys:
+            - cachenum-16-packs-manifest-
+      - restore_cache:
+          keys:
+            - cachenum-16-yarn-{{ checksum "yarn.lock" }}
+            
       - run:
           name: Install Bundle & Gems
           no_output_timeout: 30m
