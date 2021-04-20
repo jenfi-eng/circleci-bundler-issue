@@ -1,0 +1,40 @@
+# Ruby CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-ruby/ for more details
+#
+version: 2.1
+
+jobs:
+  run-specs:
+    docker:
+      # specify the version you desire here
+      - image: cimg/ruby:3.0.1-node
+
+    steps:
+      - checkout
+
+      - run:
+          name: Install Packages
+          command: |
+            sudo apt-get update && sudo apt-get install -y \
+            shared-mime-info \
+            libxml2-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libxrender-dev \
+            libfontconfig
+      - run:
+          name: Install Bundle & Gems
+          no_output_timeout: 30m
+          command: |
+            echo 'export BUNDLER_VERSION=$(cat Gemfile.lock | tail -1 | tr -d " ")' >> $BASH_ENV
+            source $BASH_ENV
+            gem install bundler -v $BUNDLER_VERSION
+            bundle config set --local path 'vendor/bundle'
+            bundle install --jobs=4 --retry=3
+
+workflows:
+  version: 2
+  specs-only:
+    jobs:
+      - run-specs
